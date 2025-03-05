@@ -1,0 +1,7 @@
+name: quoco-mom
+services:
+  activemq-artemis:
+    image: ousodaniel/activemq-artemis:ds
+    ports:
+      - 8161:8161 # admin
+      - 61616:61616 # internet

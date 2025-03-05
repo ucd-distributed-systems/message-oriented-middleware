@@ -44,7 +44,6 @@
         </plugins>
     </build>
 
-
     <dependencies>
         <dependency>
             <groupId>quoco-mom</groupId>

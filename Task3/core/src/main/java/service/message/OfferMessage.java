@@ -11,6 +11,7 @@ public class OfferMessage implements java.io.Serializable {
         this.info = info;
         this.quotations = quotations;
     }
+
     public ClientInfo getInfo() {
         return info;
     }
