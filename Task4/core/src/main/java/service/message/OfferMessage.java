@@ -6,14 +6,9 @@ import service.core.Quotation;
 public class OfferMessage implements java.io.Serializable {
     private ClientInfo info;
     private LinkedList<Quotation> quotations;
-    public OfferMessage(ClientInfo info,
-                        LinkedList<Quotation> quotations) {
+    public OfferMessage(ClientInfo info, LinkedList<Quotation> quotations) {
         this.info = info;
         this.quotations = quotations;
-    }
-
-    public OfferMessage(ClientInfo info) {
-        this.info = info;
     }
 
     public ClientInfo getInfo() {
@@ -23,10 +18,7 @@ public class OfferMessage implements java.io.Serializable {
         return quotations;
     }
 
-    public void setClientInfo(ClientInfo info) {
-        this.info = info;
-    }
-    public void setQuotations(LinkedList<Quotation> quotations) {
-        this.quotations = quotations;
+    public void addQuotation(Quotation quotation) {
+        this.quotations.add(quotation);
     }
 }

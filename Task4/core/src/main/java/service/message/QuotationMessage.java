@@ -13,4 +13,5 @@ public class QuotationMessage implements java.io.Serializable {
     public Quotation getQuotation() {
         return quotation;
     }
+
 }

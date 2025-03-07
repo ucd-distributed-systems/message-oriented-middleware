@@ -4,14 +4,20 @@ package service;
 import jakarta.jms.*;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import service.core.ClientInfo;
+import service.core.Quotation;
 import service.message.ClientMessage;
 import service.message.OfferMessage;
+import service.message.QuotationMessage;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Main {
     private static Map<Long, OfferMessage> tokenToOffer = new HashMap<>();
+    private static AtomicBoolean threadStarted = new AtomicBoolean(false);
 
     public static void main(String[] args) throws JMSException {
         try {
@@ -49,13 +55,21 @@ public class Main {
                         ClientMessage request = (ClientMessage) (
                                 (ObjectMessage) message).getObject();
 
-                        System.out.println(request.getClientInfo());
                         long token = request.getToken();
+                        System.out.println("Broker received client message with token: " + token);
                         ClientInfo info = request.getClientInfo();
 
-                        OfferMessage partialOffer = new OfferMessage(info);
-                        // token associated with null because no offer generated yet
+                        // create partially complete offer and associate with token from client
+                        // no quotations yet
+                        OfferMessage partialOffer = new OfferMessage(info, new LinkedList<>());
                         tokenToOffer.put(token, partialOffer);
+
+                        // Start the thread only once when the first order arrives
+                        if (threadStarted.compareAndSet(false, true)) {
+                            new Thread(() -> processOffers(tokenToOffer, produceOffers, session)).start();
+                            System.out.println("Offer processing thread started.");
+                        }
+
                         // messages from client are to be explicitly acknowledged
                         message.acknowledge();
                     } catch (JMSException e) {
@@ -63,32 +77,65 @@ public class Main {
                     }
                 }
             });
-            // time limit to receive quotations before adding to OFFERS queue
-            // anonymous object
-            new Thread() {
-                public void run() {
-                    // consume messages from QUOTATIONS queue
-                    // add quotations to OfferMessage
+//          
+            // consume quotes in the Quotations queue
+            consumeQuotes.setMessageListener(new MessageListener() {
+                @Override
+                public void onMessage(Message message) {
                     try {
-                        Thread.sleep(3000);
-                        // send all offers
-                        for (OfferMessage offer : tokenToOffer.values()) {
-                            // use Message interface
-                            // abstracts communication with common type of message
-                            Message response = session.createObjectMessage(offer);
-                            produceOffers.send(response);
-                        }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        // receive message from quotes queue
+                        QuotationMessage request = (QuotationMessage) (
+                                (ObjectMessage) message).getObject();
+
+                        long token = request.getToken();
+                        System.out.println("Broker received quotation message with token: " + token);
+                        Quotation quote = request.getQuotation();
+
+                        // update the offer message by adding new quotes
+                        OfferMessage currOffer = tokenToOffer.get(token);
+                        currOffer.addQuotation(quote);
+                        // messages from client are to be explicitly acknowledged
+                        message.acknowledge();
                     } catch (JMSException e) {
-                        throw new RuntimeException(e);
+                        e.printStackTrace();
                     }
                 }
-            }.start();
-
-
+            });
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
     }
+
+    private static void processOffers (Map <Long, OfferMessage> tokenToOffer, MessageProducer produceOffers, Session session) {
+        while (true) {
+            try {
+                Thread.sleep(3000);
+                // synchronized to ensure thread safety
+                synchronized (tokenToOffer) {
+                    if (!tokenToOffer.isEmpty()) {
+                        for (OfferMessage offer : tokenToOffer.values()) {
+                            try {
+                                // use Message interface
+                                // abstracts communication with common type of message
+                                Message response = session.createObjectMessage(offer);
+                                System.out.println("Broker sending response to Offers with quotations: " + offer.getQuotations());
+                                produceOffers.send(response);
+                            } catch (JMSException e) {
+                                System.err.println("Error sending message: " + e.getMessage());
+                            }
+                        }
+                    }
+                    // clear processed offers
+                    tokenToOffer.clear();
+                }
+            } catch (InterruptedException e) {
+                System.err.println("Thread interrupted");
+            } catch (Exception e) {
+                System.err.println("Unexpected error: " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
 }
+
+

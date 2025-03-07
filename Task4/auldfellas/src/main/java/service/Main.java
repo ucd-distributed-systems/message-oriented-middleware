@@ -42,12 +42,15 @@ public class Main {
                     // extract content of message
                     ClientMessage request = (ClientMessage) (
                             (ObjectMessage) message).getObject();
+
+                    long token = request.getToken();
+                    System.out.println("Auldfellas Service received client message: " + token);
                     // generate quotation using the clientInfo contained in the message
                     Quotation quotation = afqService.generateQuotation(
                             request.getClientInfo());
                     // create a quotation message in form of ObjectMessage
                     Message response = session.createObjectMessage(
-                            new QuotationMessage(request.getToken(), quotation)
+                            new QuotationMessage(token, quotation)
                     );
                     // add QuotationMessage to Quotations queue
                     producer.send(response);
