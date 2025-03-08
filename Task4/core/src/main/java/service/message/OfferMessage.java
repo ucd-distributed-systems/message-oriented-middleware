@@ -8,7 +8,7 @@ public class OfferMessage implements java.io.Serializable {
     private LinkedList<Quotation> quotations;
     public OfferMessage(ClientInfo info, LinkedList<Quotation> quotations) {
         this.info = info;
-        this.quotations = quotations;
+        this.quotations = quotations == null ? new LinkedList<>() : quotations;
     }
 
     public ClientInfo getInfo() {
@@ -18,7 +18,8 @@ public class OfferMessage implements java.io.Serializable {
         return quotations;
     }
 
-    public void addQuotation(Quotation quotation) {
+    public synchronized void addQuotation(Quotation quotation) {
+        System.out.println("About to add quotation!");
         this.quotations.add(quotation);
     }
 }

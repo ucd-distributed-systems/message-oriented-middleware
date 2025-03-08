@@ -1,3 +1,6 @@
+service/message/OfferMessage.class
 service/core/ClientInfo.class
+service/message/QuotationMessage.class
 service/core/AbstractQuotationService.class
 service/core/Quotation.class
+service/message/ClientMessage.class

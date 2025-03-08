@@ -55,7 +55,6 @@ public class Main {
             consumer.setMessageListener(new MessageListener() {
                 @Override
                 public void onMessage(Message message) {
-                    System.out.println("Received a message");
                     try {
                         OfferMessage offerMessage = (OfferMessage) (
                                 (ObjectMessage) message).getObject();
