@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Main {
-    private static Map<Long, OfferMessage> tokenToOffer = new ConcurrentHashMap<>();
+    private static final Map<Long, OfferMessage> tokenToOffer = new ConcurrentHashMap<>();
     private static AtomicBoolean threadStarted = new AtomicBoolean(false);
 
     public static void main(String[] args) throws JMSException {
@@ -55,9 +55,8 @@ public class Main {
                                 (ObjectMessage) message).getObject();
 
                         long token = request.getToken();
-//                        System.out.println("Broker received client message with token: " + token);
                         ClientInfo info = request.getClientInfo();
-
+                        System.out.println("Received Order for Client: " + token);
                         // create partially complete offer and associate with token from client
                         // no quotations yet
                         OfferMessage partialOffer = new OfferMessage(info, new LinkedList<>());
@@ -65,7 +64,9 @@ public class Main {
 
                         // Start the thread only once when the first order arrives
                         if (threadStarted.compareAndSet(false, true)) {
-                            new Thread(() -> processOffers(tokenToOffer, produceOffers, session)).start();
+                            // spawn thread to process quotes received from quotes queue
+                            // process into OfferMessages to be added to Offers queue
+                            new Thread(() -> processOffers(tokenToOffer.values(), produceOffers, session)).start();
                             System.out.println("Offer processing thread started.");
                         }
 
@@ -76,7 +77,6 @@ public class Main {
                     }
                 }
             });
-//
             // consume quotes in the Quotations queue
             consumeQuotes.setMessageListener(new MessageListener() {
                 @Override
@@ -87,16 +87,18 @@ public class Main {
                                 (ObjectMessage) message).getObject();
 
                         long token = request.getToken();
-                        System.out.println("Broker received quotation message with token: " + token);
                         Quotation quote = request.getQuotation();
-                        System.out.println("Quote for company: " + quote.company);
                         // update the offer message by adding new quotes
-
+                        System.out.println("Received Quote for Client: " + token);
+                        // tokens from QuotationMessages must correspond to a token from a ClientMessage
+                        // quotation is for the client
                         if (tokenToOffer.containsKey(token)) {
+                            // synchronized for thread safety?
                             synchronized (tokenToOffer) {
+                                // update an OfferMessage with more quotations
                                 OfferMessage currOffer = tokenToOffer.get(token);
-                                System.out.println("Hash of current offer: " + System.identityHashCode(currOffer));
-                                currOffer.addQuotation(quote);
+                                List<Quotation> quotations = currOffer.getQuotations();
+                                quotations.add(quote);
                             }
                         }
 
@@ -112,39 +114,27 @@ public class Main {
         }
     }
 
-    private static void processOffers (Map <Long, OfferMessage> tokenToOffer, MessageProducer produceOffers, Session session) {
-        while (true) {
-            try {
-                Thread.sleep(5000);
-                // synchronized to ensure thread safety
-                synchronized (tokenToOffer) {
-                    if (!tokenToOffer.isEmpty()) {
-                        System.out.println("Offers to process: " + tokenToOffer.size());
-                        Iterator<Map.Entry<Long, OfferMessage>> iterator = tokenToOffer.entrySet().iterator();
-                        while (iterator.hasNext()) {
-                            Map.Entry<Long, OfferMessage> entry = iterator.next();
-                            OfferMessage offer = entry.getValue();
-                            System.out.println("Hash of current offer: " + System.identityHashCode(offer));
-                            try {
-                                // use Message interface
-                                // abstracts communication with common type of message
-                                Message response = session.createObjectMessage(offer);
-                                System.out.println("Broker sending Offer for token: " + entry.getKey() + " with quotations: " + offer.getQuotations());
-                                produceOffers.send(response);
+    private static void processOffers (Collection<OfferMessage> offers, MessageProducer offerProducer, Session session) {
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            System.err.println("Thread interrupted");
+        } catch (Exception e) {
+            System.err.println("Unexpected error: " + e.getMessage());
+            e.printStackTrace();
+        }
 
-                                // remove offer once sent
-                                iterator.remove();
-                            } catch (JMSException e) {
-                                System.err.println("Error sending message: " + e.getMessage());
-                            }
-                        }
-                    }
-                }
-            } catch (InterruptedException e) {
-                System.err.println("Thread interrupted");
-            } catch (Exception e) {
-                System.err.println("Unexpected error: " + e.getMessage());
-                e.printStackTrace();
+        // send all offers to Offer queue received during sleep
+        Iterator<OfferMessage> iterator = offers.iterator();
+        while (iterator.hasNext()) {
+            OfferMessage offer = iterator.next();
+            try {
+                Message response = session.createObjectMessage(offer);
+                offerProducer.send(response);
+                System.out.println("Sending Offer for: " + offer.getInfo().name);
+                iterator.remove();
+            } catch (JMSException e) {
+                System.err.println("Error sending message" + e.getMessage());
             }
         }
     }

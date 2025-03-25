@@ -38,13 +38,13 @@ public class Main {
             public void onMessage(Message message) {
                 try {
                     // convert Message Object to ObjectMessage
-                    // assumes ORDERS topic only produces ObjectMessages
+                    // assumes ORDERS topic only contains ObjectMessages
                     // extract content of message
                     ClientMessage request = (ClientMessage) (
                             (ObjectMessage) message).getObject();
 
                     long token = request.getToken();
-                    System.out.println("Auldfellas Service received client message: " + token);
+                    System.out.println("Received ClientMessage with token: " + token);
                     // generate quotation using the clientInfo contained in the message
                     Quotation quotation = afqService.generateQuotation(
                             request.getClientInfo());
@@ -53,6 +53,7 @@ public class Main {
                             new QuotationMessage(token, quotation)
                     );
                     // add QuotationMessage to Quotations queue
+                    System.out.println("Sending QuotationMessage with token: " + token);
                     producer.send(response);
                     message.acknowledge();
                 } catch (JMSException e) {

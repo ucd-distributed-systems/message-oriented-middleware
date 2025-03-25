@@ -18,8 +18,8 @@ public class OfferMessage implements java.io.Serializable {
         return quotations;
     }
 
-    public synchronized void addQuotation(Quotation quotation) {
-        System.out.println("About to add quotation!");
-        this.quotations.add(quotation);
-    }
+//    public synchronized void addQuotation(Quotation quotation) {
+//        System.out.println("About to add quotation!");
+//        this.quotations.add(quotation);
+//    }
 }

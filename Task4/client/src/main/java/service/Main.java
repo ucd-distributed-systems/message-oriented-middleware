@@ -39,16 +39,12 @@ public class Main {
             int numc = 0;
             for (ClientInfo info : clients) {
                 numc++;
-//                System.out.println("\n\n|=================================================CLIENT INFO 0" + numc + "==================================================|");
-//                displayProfile(info);
 
-                // create and send client message to orders topic
+                // create and send client message (token, clientInfo) to orders topic
                 Message clientOrder = session.createObjectMessage(
                         new ClientMessage(numc, info)
                 );
                 producer.send(clientOrder);
-                // Print a couple of lines between each client
-//                System.out.println("                                   ********************END********************                                   " + "\n");
             }
 
             // respond to offers from Offers queue
@@ -56,14 +52,16 @@ public class Main {
                 @Override
                 public void onMessage(Message message) {
                     try {
+                        // receive offer
                         OfferMessage offerMessage = (OfferMessage) (
                                 (ObjectMessage) message).getObject();
 
-                        System.out.println("Client received offer for: " + offerMessage.getInfo().name);
-
                         // display quotes from offer
                         for (Quotation quotation : offerMessage.getQuotations()) {
+                            ClientInfo client = offerMessage.getInfo();
+                            displayProfile(client);
                             displayQuotation(quotation);
+                            System.out.println("\n\n");
                         }
 
                         message.acknowledge();
