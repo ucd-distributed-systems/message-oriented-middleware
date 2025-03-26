@@ -58,4 +58,3 @@ public class GAQService extends AbstractQuotationService {
     }
 
 }
-

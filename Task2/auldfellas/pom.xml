@@ -3,10 +3,21 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>quoco-mom</groupId>
+    <groupId>quoco-rest</groupId>
     <artifactId>auldfellas</artifactId>
     <version>0.0.1</version>
     <packaging>jar</packaging>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.4.3</version>
+        <!--
+        prevent Maven for looking for a local parent, was defaulting to Task2 b/c
+        project has a multi-module Maven structure (defaults to root POM as parent)
+        -->
+        <relativePath />
+    </parent>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -16,15 +27,22 @@
 
     <dependencies>
         <dependency>
-            <groupId>quoco-mom</groupId>
+            <groupId>quoco-rest</groupId>
             <artifactId>core</artifactId>
             <version>0.0.1</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.sun.xml.ws</groupId>-->
-<!--            <artifactId>jaxws-ri</artifactId>-->
-<!--            <version>2.3.3</version>-->
-<!--            <type>pom</type>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 </project>

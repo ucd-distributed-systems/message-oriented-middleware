@@ -3,10 +3,21 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>quoco-mom</groupId>
+    <groupId>quoco-rest</groupId>
     <artifactId>dodgygeezers</artifactId>
     <version>0.0.1</version>
     <packaging>jar</packaging>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.4.3</version>
+        <!--
+        prevent Maven for looking for a local parent, was defaulting to Task2 b/c
+        project has a multi-module Maven structure (defaults to root POM as parent)
+        -->
+        <relativePath />
+    </parent>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -14,52 +25,24 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <build>
-        <plugins>
-            <!-- Plugin used to run Java programs -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.5.0</version>
-                <configuration>
-                    <mainClass>service.Main</mainClass>
-                    <systemProperties>
-                        <systemProperty>
-                            <key>org.apache.activemq.SERIALIZABLE_PACKAGES</key>
-                            <value>*</value>
-                        </systemProperty>
-                    </systemProperties>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
-                <configuration>
-                    <argLine>
-                        -Dorg.apache.activemq.SERIALIZABLE_PACKAGES=*
-                    </argLine>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
     <dependencies>
         <dependency>
-            <groupId>quoco-mom</groupId>
+            <groupId>quoco-rest</groupId>
             <artifactId>core</artifactId>
             <version>0.0.1</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.activemq</groupId>
-            <artifactId>activemq-broker</artifactId>
-            <version>6.1.5</version>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <version>5.11.3</version>
-            <scope>test</scope>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 </project>

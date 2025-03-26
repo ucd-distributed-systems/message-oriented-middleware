@@ -42,4 +42,3 @@ public class DGQService extends AbstractQuotationService {
         return 20;
     }
 }
-
